@@ -1,12 +1,10 @@
 const jwt = require('jsonwebtoken');
-const SECRET = "supersecretkey";
 
-exports.verifyToken = (req, res, next) => {
-    const authHeader = req.headers.authorization;
+const SECRET = 'supersecretkey';
 
-    if (!authHeader) {
-        return res.status(401).json({ error: "Access denied" });
-    }
+function verifyToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) return res.status(403).json({ message: 'No token provided' });
 
     const token = authHeader.split(' ')[1];
 
@@ -15,16 +13,17 @@ exports.verifyToken = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (err) {
-        res.status(400).json({ error: "Invalid token" });
+        return res.status(401).json({ message: 'Invalid token' });
     }
-};
+}
 
-// Role-based access
-exports.allowRoles = (...roles) => {
+function authorizeRole(role) {
     return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({ error: "Forbidden: insufficient role" });
+        if (req.user.role !== role) {
+            return res.status(403).json({ message: 'Access denied' });
         }
         next();
     };
-};
+}
+
+module.exports = { verifyToken, authorizeRole, SECRET };

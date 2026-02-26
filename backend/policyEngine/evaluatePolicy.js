@@ -1,5 +1,3 @@
-'use strict';
-
 function evaluateConsent(consent, request) {
 
     if (consent.status !== "ACTIVE") {
@@ -10,10 +8,7 @@ function evaluateConsent(consent, request) {
         return { decision: "DENY", reason: "Purpose mismatch" };
     }
 
-    const currentDate = new Date();
-    const expiryDate = new Date(consent.conditions.expiry);
-
-    if (currentDate > expiryDate) {
+    if (new Date() > new Date(consent.conditions.expiry)) {
         return { decision: "DENY", reason: "Consent expired" };
     }
 

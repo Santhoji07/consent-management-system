@@ -1,69 +1,53 @@
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { SECRET } = require('../middleware/authMiddleware');
 
-const usersFile = path.join(__dirname, '../data/users.json');
-const SECRET = "supersecretkey"; // later move to .env
+const usersFile = path.join(__dirname, '../users.json');
 
-// Helper to read users
 function getUsers() {
+    if (!fs.existsSync(usersFile)) return [];
     const data = fs.readFileSync(usersFile);
-    return JSON.parse(data);
+    return data.length ? JSON.parse(data) : [];
 }
 
-// Helper to save users
 function saveUsers(users) {
     fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
 }
 
-// REGISTER
 exports.register = async (req, res) => {
     const { username, password, role } = req.body;
 
     const users = getUsers();
-
-    const existing = users.find(u => u.username === username);
-    if (existing) {
-        return res.status(400).json({ error: "User already exists" });
+    if (users.find(u => u.username === username)) {
+        return res.status(400).json({ message: 'User already exists' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = {
-        id: Date.now().toString(),
-        username,
-        password: hashedPassword,
-        role
-    };
-
-    users.push(newUser);
+    const hashed = await bcrypt.hash(password, 10);
+    users.push({ username, password: hashed, role });
     saveUsers(users);
 
-    res.json({ message: "User registered successfully" });
+    res.json({ message: 'User registered successfully' });
 };
 
-// LOGIN
 exports.login = async (req, res) => {
     const { username, password } = req.body;
 
     const users = getUsers();
     const user = users.find(u => u.username === username);
 
-    if (!user) {
-        return res.status(400).json({ error: "Invalid credentials" });
-    }
+    if (!user) return res.status(400).json({ message: 'User not found' });
 
     const valid = await bcrypt.compare(password, user.password);
-
-    if (!valid) {
-        return res.status(400).json({ error: "Invalid credentials" });
-    }
+    if (!valid) return res.status(400).json({ message: 'Invalid password' });
 
     const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role },
+        { username: user.username, role: user.role },
         SECRET,
-        { expiresIn: "2h" }
+        { expiresIn: '1h' }
     );
 
     res.json({ token, role: user.role });

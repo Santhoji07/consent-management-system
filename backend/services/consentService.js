@@ -1,76 +1,76 @@
 'use strict';
 
 const { connect } = require('../fabric/gateway');
+const { evaluateConsent } = require('../policyEngine/evaluatePolicy');
 
 async function createConsent(data) {
 
     const { gateway, contract } = await connect();
 
-    const result = await contract.submitTransaction(
-        'CreateConsent',
-        data.consentId,
-        data.userId,
-        data.orgId,
-        data.purpose,
-        data.dataType,
-        data.expiry
-    );
+    try {
+        const result = await contract.submitTransaction(
+            'CreateConsent',
+            data.consentId,
+            data.userId,
+            data.orgId,
+            data.purpose,
+            data.dataType,
+            data.expiry
+        );
 
-    await gateway.disconnect();
+        return JSON.parse(result.toString());
 
-    return JSON.parse(result.toString());
+    } finally {
+        gateway.disconnect();
+    }
 }
 
 async function queryConsent(consentId) {
 
     const { gateway, contract } = await connect();
 
-    const result = await contract.evaluateTransaction(
-        'QueryConsent',
-        consentId
-    );
+    try {
+        const result = await contract.evaluateTransaction(
+            'QueryConsent',
+            consentId
+        );
 
-    await gateway.disconnect();
+        return JSON.parse(result.toString());
 
-    return JSON.parse(result.toString());
+    } finally {
+        gateway.disconnect();
+    }
 }
-
-module.exports = {
-    createConsent,
-    queryConsent
-};
-
-const { evaluateConsent } = require('./policyEngine');
 
 async function requestAccess(data) {
 
     const { gateway, contract } = await connect();
 
-    // 1️⃣ Query Consent from Blockchain
-    const consentBytes = await contract.evaluateTransaction(
-        'QueryConsent',
-        data.consentId
-    );
+    try {
 
-    const consent = JSON.parse(consentBytes.toString());
+        const consentBytes = await contract.evaluateTransaction(
+            'QueryConsent',
+            data.consentId
+        );
 
-    // 2️⃣ Evaluate Policy
-    const decisionResult = evaluateConsent(consent, data);
+        const consent = JSON.parse(consentBytes.toString());
 
-    // 3️⃣ Record Enforcement on Blockchain
-    await contract.submitTransaction(
-        'RecordEnforcement',
-        data.logId,
-        data.consentId,
-        data.orgId,
-        decisionResult.decision,
-        decisionResult.reason
-    );
+        const decisionResult = evaluateConsent(consent, data);
 
-    await gateway.disconnect();
+        await contract.submitTransaction(
+            'RecordEnforcement',
+            data.logId,
+            data.consentId,
+            data.orgId,
+            decisionResult.decision,
+            decisionResult.reason
+        );
 
-    // 4️⃣ Return Decision
-    return decisionResult;
+        return decisionResult;
+
+    } finally {
+        gateway.disconnect();
+    }
 }
 
 module.exports = {

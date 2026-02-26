@@ -17,10 +17,7 @@ async function connect() {
     const wallet = await Wallets.newFileSystemWallet(walletPath);
 
     const identity = await wallet.get('admin');
-
-    if (!identity) {
-        throw new Error('Admin identity not found in wallet');
-    }
+    if (!identity) throw new Error('Admin identity not found');
 
     const gateway = new Gateway();
 

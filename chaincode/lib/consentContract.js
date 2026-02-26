@@ -192,3 +192,4 @@ class ConsentContract extends Contract {
 }
 
 module.exports = ConsentContract;
+
