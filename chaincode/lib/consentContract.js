@@ -189,6 +189,37 @@ class ConsentContract extends Contract {
 
         return JSON.stringify(results);
     }
+    
+
+    async QueryAllEnforcements(ctx) {
+
+    const queryString = {
+        selector: {
+            docType: "enforcement"
+        }
+    };
+
+    const iterator = await ctx.stub.getQueryResult(JSON.stringify(queryString));
+
+    const results = [];
+
+    while (true) {
+        const res = await iterator.next();
+
+        if (res.value && res.value.value.toString()) {
+            results.push(JSON.parse(res.value.value.toString('utf8')));
+        }
+
+        if (res.done) {
+            await iterator.close();
+            break;
+        }
+    }
+
+    return JSON.stringify(results);
+}
+
+
 }
 
 module.exports = ConsentContract;

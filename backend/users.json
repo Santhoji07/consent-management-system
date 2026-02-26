@@ -1,12 +1,22 @@
 [
   {
+    "username": "admin1",
+    "password": "$2b$10$MgNcit51pZxROTKpgafug.jwIARaxc8DaiSEmth075DMWNzyY8gES",
+    "role": "ADMIN"
+  },
+  {
     "username": "user1",
-    "password": "$2b$10$AXd4AmdglZ2ykhPK0Eef9eh9xMYr0lqrTj.nEQzh1YzEHvGLRDnn2",
+    "password": "$2b$10$C9RGhk7VmXkZLwr3zwgQu.RlyCDwzvBUZeARD9ew4g4oM2YJ2dpOi",
     "role": "USER"
   },
   {
     "username": "org1",
-    "password": "$2b$10$BTgoGxBRT6r/9D7JQYo6x.4yboIaFZwQoGF4dli6VTE0ORiGgtGC.",
+    "password": "$2b$10$.VghiUCSNeaFLKvIfzCoaOTbbK6Eg172lpBLBqDujAc21HaJ1nw.O",
     "role": "ORG"
+  },
+  {
+    "username": "user2",
+    "password": "$2b$10$0WtNMyAOYpzDzHrs/Ttioe5mCNFOWJlab0NQ7nlh4btTcvIoLtBxy",
+    "role": "USER"
   }
 ]

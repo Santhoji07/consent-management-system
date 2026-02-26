@@ -17,9 +17,14 @@ function verifyToken(req, res, next) {
     }
 }
 
-function authorizeRole(role) {
+function authorizeRole(...roles) {
     return (req, res, next) => {
-        if (req.user.role !== role) {
+
+        if (!req.user || !req.user.role) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        if (!roles.includes(req.user.role)) {
             return res.status(403).json({ message: 'Access denied' });
         }
         next();

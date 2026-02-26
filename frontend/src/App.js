@@ -1,18 +1,44 @@
-import React from "react";
-import "./App.css";
-import ConsentForm from "./components/ConsentForm";
-import QueryConsent from "./components/QueryConsent";
-import RequestAccess from "./components/RequestAccess";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Login from "./pages/Login";
+import UserDashboard from "./pages/UserDashboard";
+import OrgDashboard from "./pages/OrgDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
-    <div className="container">
-      <h1>Consent Management System</h1>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Login />} />
 
-      <ConsentForm />
-      <QueryConsent />
-      <RequestAccess />
-    </div>
+        <Route
+          path="/user"
+          element={
+            <ProtectedRoute role="USER">
+              <UserDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/org"
+          element={
+            <ProtectedRoute role="ORG">
+              <OrgDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute role="ADMIN">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 
