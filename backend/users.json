@@ -13,10 +13,5 @@
     "username": "org1",
     "password": "$2b$10$.VghiUCSNeaFLKvIfzCoaOTbbK6Eg172lpBLBqDujAc21HaJ1nw.O",
     "role": "ORG"
-  },
-  {
-    "username": "user2",
-    "password": "$2b$10$0WtNMyAOYpzDzHrs/Ttioe5mCNFOWJlab0NQ7nlh4btTcvIoLtBxy",
-    "role": "USER"
   }
 ]

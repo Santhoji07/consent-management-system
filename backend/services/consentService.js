@@ -47,7 +47,41 @@ async function queryConsent(consentId) {
         gateway.disconnect();
     }
 }
+// ==========================
+// REVOKE CONSENT
+// ==========================
+async function revokeConsent(consentId) {
+  const { gateway, contract } = await connect();
+  try {
+    const result = await contract.submitTransaction('RevokeConsent', consentId);
+    return JSON.parse(result.toString());
+  } finally {
+    gateway.disconnect();
+  }
+}
 
+// ==========================
+// UPDATE CONSENT
+// ==========================
+async function updateConsent(data) {
+
+    const { gateway, contract } = await connect();
+
+    try {
+        const result = await contract.submitTransaction(
+            'UpdateConsent',
+            data.consentId,
+            data.purpose,
+            data.dataType,
+            data.expiry
+        );
+
+        return JSON.parse(result.toString());
+
+    } finally {
+        gateway.disconnect();
+    }
+}
 // ==========================
 // REQUEST ACCESS
 // ==========================
@@ -127,6 +161,8 @@ async function getAllEnforcements() {
 module.exports = {
     createConsent,
     queryConsent,
+    updateConsent,
+    revokeConsent,
     requestAccess,
     getConsentHistory,
     getAllEnforcements

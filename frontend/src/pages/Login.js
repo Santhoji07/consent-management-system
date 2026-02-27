@@ -1,47 +1,46 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import API from "../api/axiosConfig";
+import React, { useState } from 'react';
+import API from '../services/api';
+import { useNavigate, Link } from 'react-router-dom';
 
 function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
-      const res = await API.post("/auth/login", {
-        username,
-        password,
-      });
+      const res = await API.post('/auth/login', { username, password });
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.role);
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('role', res.data.role);
 
-      if (res.data.role === "USER") navigate("/user");
-      if (res.data.role === "ORG") navigate("/org");
-      if (res.data.role === "ADMIN") navigate("/admin");
-
+      navigate('/dashboard');
     } catch (err) {
-      alert("Login failed");
+      alert('Login failed');
     }
   };
 
   return (
     <div>
-      <h2>Consent Management Login</h2>
+      <h2>Login</h2>
 
       <input
         placeholder="Username"
-        onChange={(e) => setUsername(e.target.value)}
+        onChange={e => setUsername(e.target.value)}
       />
-      <br />
+
       <input
-        type="password"
         placeholder="Password"
-        onChange={(e) => setPassword(e.target.value)}
+        type="password"
+        onChange={e => setPassword(e.target.value)}
       />
-      <br />
+
       <button onClick={handleLogin}>Login</button>
+
+      <p>
+        Don’t have an account? <Link to="/register">Register here</Link>
+      </p>
     </div>
   );
 }

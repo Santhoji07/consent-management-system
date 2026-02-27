@@ -1,32 +1,16 @@
-import React, { useEffect, useState } from "react";
-import API from "../api/axiosConfig";
+import React from 'react';
+import EnforcementLogs from '../components/EnforcementLogs';
+import ViewHistory from '../components/ViewHistory';
 
 function AdminDashboard() {
 
-  const [logs, setLogs] = useState([]);
-
-  useEffect(() => {
-    const fetchLogs = async () => {
-      const res = await API.get("/consent/enforcements");
-      setLogs(res.data);
-    };
-
-    fetchLogs();
-  }, []);
-
   return (
     <div>
-      <h2>Admin Dashboard</h2>
+      <h1>Admin Dashboard</h1>
 
-      <h3>Enforcement Logs</h3>
+      <EnforcementLogs />
+      <ViewHistory />
 
-      <ul>
-        {logs.map((log, index) => (
-          <li key={index}>
-            {log.consentId} | {log.orgId} | {log.decision}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

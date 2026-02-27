@@ -12,6 +12,20 @@ router.post('/create',
     authorizeRole('USER'),
     consentController.createConsent
 );
+//UPDATE CONSENT (USER only)
+router.put('/update',
+    verifyToken,
+    authorizeRole('USER'),
+    consentController.updateConsent
+);
+
+// revoke consent (USER only – adjust role as needed)
+router.post(
+  '/revoke',
+  verifyToken,
+  authorizeRole('USER'),
+  consentController.revokeConsent
+);
 
 // =========================
 // REQUEST ACCESS (ORG only)

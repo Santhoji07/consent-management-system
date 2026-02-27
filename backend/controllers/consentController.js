@@ -32,6 +32,37 @@ exports.queryConsent = async (req, res) => {
     }
 };
 
+exports.revokeConsent = async (req, res) => {
+    try {
+        const { consentId } = req.body;
+        if (!consentId) {
+            return res.status(400).json({ error: 'consentId is required' });
+        }
+
+        // USER may only revoke their own consent
+        if (req.user.role === 'USER') {
+            const consent = await consentService.queryConsent(consentId);
+            if (consent.userId !== req.user.username.toUpperCase()) {
+                return res.status(403).json({ error: 'You can only revoke your own consent' });
+            }
+        }
+
+        const result = await consentService.revokeConsent(consentId);
+        res.json({ message: 'Consent revoked', data: result });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.updateConsent = async (req, res) => {
+    try {
+        const result = await consentService.updateConsent(req.body);
+        res.json({ message: "Consent updated successfully", data: result });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 exports.requestAccess = async (req, res) => {
     try {
         const consent = await consentService.queryConsent(req.body.consentId);

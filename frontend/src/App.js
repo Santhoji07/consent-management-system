@@ -1,42 +1,37 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./pages/Login";
-import UserDashboard from "./pages/UserDashboard";
-import OrgDashboard from "./pages/OrgDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+import Login from './pages/Login';
+import Register from './pages/Register';
+import UserDashboard from './pages/UserDashboard';
+import OrgDashboard from './pages/OrgDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
+
+  const role = localStorage.getItem('role');
+
   return (
     <Router>
       <Routes>
+
         <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-        <Route
-          path="/user"
-          element={
-            <ProtectedRoute role="USER">
-              <UserDashboard />
-            </ProtectedRoute>
-          }
-        />
+        {role === 'USER' && (
+          <Route path="/dashboard" element={<UserDashboard />} />
+        )}
 
-        <Route
-          path="/org"
-          element={
-            <ProtectedRoute role="ORG">
-              <OrgDashboard />
-            </ProtectedRoute>
-          }
-        />
+        {role === 'ORG' && (
+          <Route path="/dashboard" element={<OrgDashboard />} />
+        )}
 
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute role="ADMIN">
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
+        {role === 'ADMIN' && (
+          <Route path="/dashboard" element={<AdminDashboard />} />
+        )}
+
+        <Route path="*" element={<Navigate to="/" />} />
+
       </Routes>
     </Router>
   );
