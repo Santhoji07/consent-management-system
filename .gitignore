@@ -1,1 +1,8 @@
 fabric-samples/
+
+Add text → machine-readable policy converter (backend/policyEngine/parseConsent.js) — rule-based starter + tests.
+Extend evaluatePolicy.js to use parsed policies and produce explainable decisions.
+Move secrets to environment vars and update authMiddleware.js to read process.env.JWT_SECRET; add .env example.
+Automate admin enrollment & wallet handling (enrollAdmin.js improvements).
+Add Fabric endorsement/channel config templates and notes for multi-org setup (docker-compose / configtx).
+Add unit tests and API integration tests for enforcement + audit.
