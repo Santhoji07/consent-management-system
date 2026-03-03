@@ -6,32 +6,45 @@ import Register from './pages/Register';
 import UserDashboard from './pages/UserDashboard';
 import OrgDashboard from './pages/OrgDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import Navbar from './components/Navbar';
 
 function App() {
-
-  const role = localStorage.getItem('role');
-
   return (
     <Router>
+      <Navbar />
       <Routes>
-
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
-
-        {role === 'USER' && (
-          <Route path="/dashboard" element={<UserDashboard />} />
-        )}
-
-        {role === 'ORG' && (
-          <Route path="/dashboard" element={<OrgDashboard />} />
-        )}
-
-        {role === 'ADMIN' && (
-          <Route path="/dashboard" element={<AdminDashboard />} />
-        )}
-
+        
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['USER']}>
+              <UserDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/org-dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['ORG']}>
+              <OrgDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/admin-dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
         <Route path="*" element={<Navigate to="/" />} />
-
       </Routes>
     </Router>
   );

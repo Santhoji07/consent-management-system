@@ -1,13 +1,24 @@
 import { Navigate } from "react-router-dom";
 
-function ProtectedRoute({ children, role }) {
+function ProtectedRoute({ children, allowedRoles = [] }) {
   const userRole = localStorage.getItem("role");
+  const token = localStorage.getItem("token");
 
-  if (!userRole) {
+  // Check if user is logged in
+  if (!token || !userRole) {
     return <Navigate to="/" />;
   }
 
-  if (role && userRole !== role) {
+  // Check if user has the required role
+  if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
+    // Redirect to appropriate dashboard based on role
+    if (userRole === 'USER') {
+      return <Navigate to="/dashboard" />;
+    } else if (userRole === 'ORG') {
+      return <Navigate to="/org-dashboard" />;
+    } else if (userRole === 'ADMIN') {
+      return <Navigate to="/admin-dashboard" />;
+    }
     return <Navigate to="/" />;
   }
 
