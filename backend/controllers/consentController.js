@@ -85,6 +85,14 @@ exports.requestAccess = async (req, res) => {
 
 exports.getHistory = async (req, res) => {
     try {
+        // If USER role, check they can only view their own consent
+        if (req.user.role === 'USER') {
+            const consent = await consentService.queryConsent(req.params.id);
+            if (consent.userId !== req.user.username.toUpperCase()) {
+                return res.status(403).json({ error: "You can only view your own consent history" });
+            }
+        }
+
         const result = await consentService.getConsentHistory(req.params.id);
         res.json(result);
     } catch (err) {

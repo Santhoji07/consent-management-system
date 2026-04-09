@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 
-const SECRET = 'supersecretkey';
+const SECRET = process.env.JWT_SECRET || 'supersecretkey';
+
+function getSecret() {
+    return process.env.JWT_SECRET || 'supersecretkey';
+}
 
 function verifyToken(req, res, next) {
     const authHeader = req.headers['authorization'];
@@ -9,7 +13,7 @@ function verifyToken(req, res, next) {
     const token = authHeader.split(' ')[1];
 
     try {
-        const decoded = jwt.verify(token, SECRET);
+        const decoded = jwt.verify(token, getSecret());
         req.user = decoded;
         next();
     } catch (err) {
@@ -31,4 +35,4 @@ function authorizeRole(...roles) {
     };
 }
 
-module.exports = { verifyToken, authorizeRole, SECRET };
+module.exports = { verifyToken, authorizeRole, SECRET, getSecret };

@@ -1,17 +1,14 @@
 'use strict';
 
-const { connect } = require('../fabric/gateway');
-const { evaluateConsent } = require('../policyEngine/evaluatePolicy');
+const { evaluateTransaction, submitTransaction, getConnection } = require('../fabric/gateway');
+const { evaluateConsent, createPolicyFromStructured } = require('../policyEngine/evaluatePolicy');
 
 // ==========================
 // CREATE CONSENT
 // ==========================
 async function createConsent(data) {
-
-    const { gateway, contract } = await connect();
-
     try {
-        const result = await contract.submitTransaction(
+        const resultBytes = await submitTransaction(
             'CreateConsent',
             data.consentId,
             data.userId,
@@ -20,11 +17,15 @@ async function createConsent(data) {
             data.dataType,
             data.expiry
         );
-
-        return JSON.parse(result.toString());
-
-    } finally {
-        gateway.disconnect();
+        const result = resultBytes.toString();
+        const parsed = JSON.parse(result);
+        if (parsed.error) {
+            throw new Error(parsed.error);
+        }
+        return parsed;
+    } catch (error) {
+        console.error('[ERROR] createConsent:', error.message);
+        throw error;
     }
 }
 
@@ -32,43 +33,42 @@ async function createConsent(data) {
 // QUERY CONSENT
 // ==========================
 async function queryConsent(consentId) {
-
-    const { gateway, contract } = await connect();
-
     try {
-        const result = await contract.evaluateTransaction(
+        const resultBytes = await evaluateTransaction(
             'QueryConsent',
             consentId
         );
-
-        return JSON.parse(result.toString());
-
-    } finally {
-        gateway.disconnect();
+        const result = resultBytes.toString();
+        const parsed = JSON.parse(result);
+        if (parsed.error) {
+            throw new Error(parsed.error);
+        }
+        return parsed;
+    } catch (error) {
+        console.error('[ERROR] queryConsent:', error.message);
+        throw error;
     }
 }
+
 // ==========================
 // REVOKE CONSENT
 // ==========================
 async function revokeConsent(consentId) {
-  const { gateway, contract } = await connect();
-  try {
-    const result = await contract.submitTransaction('RevokeConsent', consentId);
-    return JSON.parse(result.toString());
-  } finally {
-    gateway.disconnect();
-  }
+    try {
+        const result = await submitTransaction('RevokeConsent', consentId);
+        return JSON.parse(result.toString());
+    } catch (error) {
+        console.error('[ERROR] revokeConsent:', error.message);
+        throw error;
+    }
 }
 
 // ==========================
 // UPDATE CONSENT
 // ==========================
 async function updateConsent(data) {
-
-    const { gateway, contract } = await connect();
-
     try {
-        const result = await contract.submitTransaction(
+        const result = await submitTransaction(
             'UpdateConsent',
             data.consentId,
             data.purpose,
@@ -77,33 +77,38 @@ async function updateConsent(data) {
         );
 
         return JSON.parse(result.toString());
-
-    } finally {
-        gateway.disconnect();
+    } catch (error) {
+        console.error('[ERROR] updateConsent:', error.message);
+        throw error;
     }
 }
+
 // ==========================
 // REQUEST ACCESS
 // ==========================
 async function requestAccess(data) {
-
-    const { gateway, contract } = await connect();
-
     try {
-
-        // 1️⃣ Get consent
-        const consentBytes = await contract.evaluateTransaction(
+        // 1️⃣ Get consent from Fabric
+        const consentBytes = await evaluateTransaction(
             'QueryConsent',
             data.consentId
         );
 
         const consent = JSON.parse(consentBytes.toString());
 
-        // 2️⃣ Evaluate policy
-        const decisionResult = evaluateConsent(consent, data);
+        // 2️⃣ Create policy from structured consent data
+        const policy = createPolicyFromStructured(consent);
 
-        // 3️⃣ Record enforcement
-        await contract.submitTransaction(
+        // 3️⃣ Evaluate policy with detailed explanation
+        const decisionResult = evaluateConsent(policy, {
+            purpose: data.purpose,
+            operation: 'access',
+            dataType: consent.dataType,
+            recipient: data.orgId
+        });
+
+        // 4️⃣ Record enforcement with full explanation
+        await submitTransaction(
             'RecordEnforcement',
             data.logId,
             data.consentId,
@@ -112,10 +117,17 @@ async function requestAccess(data) {
             decisionResult.reason
         );
 
-        return decisionResult;
-
-    } finally {
-        gateway.disconnect();
+        // Return decision with explanation for frontend display
+        return {
+            decision: decisionResult.decision,
+            reason: decisionResult.reason,
+            explanation: decisionResult.explanation,
+            policyUsed: decisionResult.policyUsed,
+            checkedConditions: decisionResult.checkedConditions
+        };
+    } catch (error) {
+        console.error('[ERROR] requestAccess:', error.message);
+        throw error;
     }
 }
 
@@ -123,19 +135,16 @@ async function requestAccess(data) {
 // GET CONSENT HISTORY
 // ==========================
 async function getConsentHistory(consentId) {
-
-    const { gateway, contract } = await connect();
-
     try {
-        const result = await contract.evaluateTransaction(
+        const result = await evaluateTransaction(
             'GetConsentHistory',
             consentId
         );
 
         return JSON.parse(result.toString());
-
-    } finally {
-        gateway.disconnect();
+    } catch (error) {
+        console.error('[ERROR] getConsentHistory:', error.message);
+        throw error;
     }
 }
 
@@ -143,18 +152,15 @@ async function getConsentHistory(consentId) {
 // GET ALL ENFORCEMENTS
 // ==========================
 async function getAllEnforcements() {
-
-    const { gateway, contract } = await connect();
-
     try {
-        const result = await contract.evaluateTransaction(
+        const result = await evaluateTransaction(
             'QueryAllEnforcements'
         );
 
         return JSON.parse(result.toString());
-
-    } finally {
-        gateway.disconnect();
+    } catch (error) {
+        console.error('[ERROR] getAllEnforcements:', error.message);
+        throw error;
     }
 }
 
@@ -167,3 +173,4 @@ module.exports = {
     getConsentHistory,
     getAllEnforcements
 };
+

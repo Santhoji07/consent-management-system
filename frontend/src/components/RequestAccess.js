@@ -29,13 +29,39 @@ function RequestAccess() {
     }
   };
 
+  // Render detailed condition check
+  const renderConditionCheck = (key, value) => {
+    if (!value) return null;
+    
+    const labels = {
+      purpose: 'Purpose Check',
+      expiry: 'Expiry Check',
+      dataType: 'Data Type Check',
+      operation: 'Operation Check',
+      recipient: 'Recipient Check',
+      retention: 'Retention Check'
+    };
+
+    return (
+      <div key={key} className="condition-check">
+        <strong>{labels[key] || key}:</strong>
+        <span className={value.match || value.valid || value.compliant ? 'check-pass' : 'check-fail'}>
+          {value.match !== undefined ? (value.match ? '✓ Pass' : '✗ Fail') : 
+           value.valid !== undefined ? (value.valid ? '✓ Valid' : '✗ Expired') :
+           value.compliant !== undefined ? (value.compliant ? '✓ Compliant' : '✗ Exceeds Limit') : ''}
+        </span>
+        {value.reason && <span className="condition-reason">{value.reason}</span>}
+      </div>
+    );
+  };
+
   return (
-    <div>
+    <div className="request-access-container">
       <h3>Request Access</h3>
       
       {error && <div className="error-message">{error}</div>}
       
-      <form onSubmit={handleRequest}>
+      <form onSubmit={handleRequest} className="access-request-form">
         <div className="form-group">
           <label>Consent ID</label>
           <input
@@ -68,18 +94,48 @@ function RequestAccess() {
           />
         </div>
         
-        <button type="submit" disabled={loading}>
+        <button type="submit" disabled={loading} className="btn-primary">
           {loading ? 'Processing...' : 'Request Access'}
         </button>
       </form>
 
       {result && (
-        <div className="response-display">
-          <h4>Decision: <span className={result.decision === 'GRANTED' ? 'decision-granted' : 'decision-denied'}>
-            {result.decision}
-          </span></h4>
-          {result.reason && <p>Reason: {result.reason}</p>}
-          {result.policyUsed && <p>Policy Used: {result.policyUsed}</p>}
+        <div className="decision-result">
+          <div className="decision-header">
+            <h4>Decision: 
+              <span className={`decision-badge ${result.decision === 'GRANTED' ? 'granted' : 'denied'}`}>
+                {result.decision}
+              </span>
+            </h4>
+            {result.reason && <p className="decision-reason">Reason: {result.reason}</p>}
+            {result.policyUsed && <p className="policy-version">Policy Version: {result.policyUsed}</p>}
+          </div>
+
+          {/* Detailed Explanation */}
+          {result.explanation && result.explanation.length > 0 && (
+            <div className="explanation-section">
+              <h5>Decision Explanation:</h5>
+              <ul className="explanation-list">
+                {result.explanation.map((item, index) => (
+                  <li key={index} className={item.startsWith('✓') ? 'explain-pass' : 'explain-fail'}>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Detailed Condition Checks */}
+          {result.checkedConditions && Object.keys(result.checkedConditions).length > 0 && (
+            <div className="conditions-section">
+              <h5>Detailed Policy Conditions:</h5>
+              <div className="conditions-grid">
+                {Object.entries(result.checkedConditions).map(([key, value]) => 
+                  renderConditionCheck(key, value)
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

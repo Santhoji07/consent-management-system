@@ -37,11 +37,11 @@ router.post('/request-access',
 );
 
 // =========================
-// ADMIN ROUTES
+// HISTORY & ENFORCEMENTS (ADMIN only)
 // =========================
 router.get('/history/:id',
     verifyToken,
-    authorizeRole('ADMIN'),
+    authorizeRole('ADMIN', 'USER'),
     consentController.getHistory
 );
 
@@ -54,6 +54,7 @@ router.get('/enforcements',
 // =========================
 // QUERY CONSENT
 // (USER + ADMIN allowed)
+// NOTE: This must come AFTER /history/:id and /enforcements routes
 // =========================
 router.get('/:id',
     verifyToken,

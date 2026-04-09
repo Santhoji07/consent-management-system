@@ -18,206 +18,233 @@ class ConsentContract extends Contract {
     // ================================
     // CREATE CONSENT
     // ================================
-    async CreateConsent(ctx, consentId, userId, orgId, purpose, dataType, expiry) {
+async CreateConsent(ctx, consentId, userId, orgId, purpose, dataType, expiry) {
+        try {
+            const consentKey = `CONSENT_${consentId}`;
+            const existing = await ctx.stub.getState(consentKey);
 
-        const consentKey = `CONSENT_${consentId}`;
-        const existing = await ctx.stub.getState(consentKey);
+            if (existing && existing.length > 0) {
+                return JSON.stringify({ error: `Consent ${consentId} already exists` });
+            }
 
-        if (existing && existing.length > 0) {
-            throw new Error(`Consent ${consentId} already exists`);
+            const timestamp = this._getTxTimestamp(ctx);
+
+            const consent = {
+                docType: "consent",
+                consentId,
+                userId,
+                orgId,
+                purpose,
+                dataType,
+                conditions: {
+                    expiry,
+                    allowedFrequency: "UNLIMITED"
+                },
+                status: "ACTIVE",
+                version: 1,
+                createdAt: timestamp,
+                updatedAt: timestamp
+            };
+
+            await ctx.stub.putState(
+                consentKey,
+                Buffer.from(JSON.stringify(consent))
+            );
+
+            // Composite key for indexing
+            const compositeKey = ctx.stub.createCompositeKey(
+                'consent',
+                [userId, orgId]
+            );
+
+            await ctx.stub.putState(compositeKey, Buffer.from('\u0000'));
+
+            return JSON.stringify(consent);
+        } catch (error) {
+            return JSON.stringify({ error: error.message });
         }
-
-        const timestamp = this._getTxTimestamp(ctx);
-
-        const consent = {
-            docType: "consent",
-            consentId,
-            userId,
-            orgId,
-            purpose,
-            dataType,
-            conditions: {
-                expiry,
-                allowedFrequency: "UNLIMITED"
-            },
-            status: "ACTIVE",
-            version: 1,
-            createdAt: timestamp,
-            updatedAt: timestamp
-        };
-
-        await ctx.stub.putState(
-            consentKey,
-            Buffer.from(JSON.stringify(consent))
-        );
-
-        // Composite key for indexing
-        const compositeKey = ctx.stub.createCompositeKey(
-            'consent',
-            [userId, orgId]
-        );
-
-        await ctx.stub.putState(compositeKey, Buffer.from('\u0000'));
-
-        return JSON.stringify(consent);
     }
 
     // ================================
     // QUERY CONSENT
     // ================================
-    async QueryConsent(ctx, consentId) {
+async QueryConsent(ctx, consentId) {
+        try {
+            const consentKey = `CONSENT_${consentId}`;
+            const consentBytes = await ctx.stub.getState(consentKey);
 
-        const consentKey = `CONSENT_${consentId}`;
-        const consentBytes = await ctx.stub.getState(consentKey);
+            if (!consentBytes || consentBytes.length === 0) {
+                return JSON.stringify({ error: `Consent ${consentId} does not exist` });
+            }
 
-        if (!consentBytes || consentBytes.length === 0) {
-            throw new Error(`Consent ${consentId} does not exist`);
+            return consentBytes.toString();
+        } catch (error) {
+            return JSON.stringify({ error: error.message });
         }
-
-        return consentBytes.toString();
     }
 
     // ================================
     // UPDATE CONSENT
     // ================================
-    async UpdateConsent(ctx, consentId, purpose, dataType, expiry) {
+async UpdateConsent(ctx, consentId, purpose, dataType, expiry) {
+        try {
+            const consentKey = `CONSENT_${consentId}`;
+            const consentBytes = await ctx.stub.getState(consentKey);
 
-        const consentKey = `CONSENT_${consentId}`;
-        const consentBytes = await ctx.stub.getState(consentKey);
+            if (!consentBytes || consentBytes.length === 0) {
+                return JSON.stringify({ error: `Consent ${consentId} does not exist` });
+            }
 
-        if (!consentBytes || consentBytes.length === 0) {
-            throw new Error(`Consent ${consentId} does not exist`);
+            const consent = JSON.parse(consentBytes.toString());
+            const timestamp = this._getTxTimestamp(ctx);
+
+            consent.purpose = purpose;
+            consent.dataType = dataType;
+            consent.conditions.expiry = expiry;
+            consent.version += 1;
+            consent.updatedAt = timestamp;
+
+            await ctx.stub.putState(
+                consentKey,
+                Buffer.from(JSON.stringify(consent))
+            );
+
+            return JSON.stringify(consent);
+        } catch (error) {
+            return JSON.stringify({ error: error.message });
         }
-
-        const consent = JSON.parse(consentBytes.toString());
-        const timestamp = this._getTxTimestamp(ctx);
-
-        consent.purpose = purpose;
-        consent.dataType = dataType;
-        consent.conditions.expiry = expiry;
-        consent.version += 1;
-        consent.updatedAt = timestamp;
-
-        await ctx.stub.putState(
-            consentKey,
-            Buffer.from(JSON.stringify(consent))
-        );
-
-        return JSON.stringify(consent);
     }
 
     // ================================
     // REVOKE CONSENT
     // ================================
-    async RevokeConsent(ctx, consentId) {
+async RevokeConsent(ctx, consentId) {
+        try {
+            const consentKey = `CONSENT_${consentId}`;
+            const consentBytes = await ctx.stub.getState(consentKey);
 
-        const consentKey = `CONSENT_${consentId}`;
-        const consentBytes = await ctx.stub.getState(consentKey);
+            if (!consentBytes || consentBytes.length === 0) {
+                return JSON.stringify({ error: `Consent ${consentId} does not exist` });
+            }
 
-        if (!consentBytes || consentBytes.length === 0) {
-            throw new Error(`Consent ${consentId} does not exist`);
+            const consent = JSON.parse(consentBytes.toString());
+            
+            // Check if already revoked
+            if (consent.status === "REVOKED") {
+                return JSON.stringify({ error: `Consent ${consentId} is already revoked` });
+            }
+            
+            const timestamp = this._getTxTimestamp(ctx);
+
+            consent.status = "REVOKED";
+            consent.version += 1;
+            consent.updatedAt = timestamp;
+
+            await ctx.stub.putState(
+                consentKey,
+                Buffer.from(JSON.stringify(consent))
+            );
+
+            return JSON.stringify(consent);
+        } catch (error) {
+            return JSON.stringify({ error: error.message });
         }
-
-        const consent = JSON.parse(consentBytes.toString());
-        const timestamp = this._getTxTimestamp(ctx);
-
-        consent.status = "REVOKED";
-        consent.version += 1;
-        consent.updatedAt = timestamp;
-
-        await ctx.stub.putState(
-            consentKey,
-            Buffer.from(JSON.stringify(consent))
-        );
-
-        return JSON.stringify(consent);
     }
 
     // ================================
     // RECORD ENFORCEMENT
     // ================================
-    async RecordEnforcement(ctx, logId, consentId, orgId, decision, reason) {
+async RecordEnforcement(ctx, logId, consentId, orgId, decision, reason) {
+        try {
+            const logKey = `ENFORCEMENT_${logId}`;
+            const timestamp = this._getTxTimestamp(ctx);
 
-        const logKey = `ENFORCEMENT_${logId}`;
-        const timestamp = this._getTxTimestamp(ctx);
+            const log = {
+                docType: "enforcement",
+                logId,
+                consentId,
+                orgId,
+                decision,
+                reason,
+                timestamp
+            };
 
-        const log = {
-            docType: "enforcement",
-            logId,
-            consentId,
-            orgId,
-            decision,
-            reason,
-            timestamp
-        };
+            await ctx.stub.putState(
+                logKey,
+                Buffer.from(JSON.stringify(log))
+            );
 
-        await ctx.stub.putState(
-            logKey,
-            Buffer.from(JSON.stringify(log))
-        );
-
-        return JSON.stringify(log);
+            return JSON.stringify(log);
+        } catch (error) {
+            return JSON.stringify({ error: error.message });
+        }
     }
 
     // ================================
     // GET CONSENT HISTORY (AUDIT)
     // ================================
-    async GetConsentHistory(ctx, consentId) {
+async GetConsentHistory(ctx, consentId) {
+        try {
+            const consentKey = `CONSENT_${consentId}`;
+            const iterator = await ctx.stub.getHistoryForKey(consentKey);
 
-        const consentKey = `CONSENT_${consentId}`;
-        const iterator = await ctx.stub.getHistoryForKey(consentKey);
+            const results = [];
 
-        const results = [];
+            while (true) {
+                const res = await iterator.next();
 
-        while (true) {
-            const res = await iterator.next();
+                if (res.value) {
+                    results.push({
+                        txId: res.value.txId,
+                        timestamp: res.value.timestamp,
+                        isDelete: res.value.isDelete,
+                        value: res.value.value.toString('utf8')
+                    });
+                }
 
-            if (res.value) {
-                results.push({
-                    txId: res.value.txId,
-                    timestamp: res.value.timestamp,
-                    isDelete: res.value.isDelete,
-                    value: res.value.value.toString('utf8')
-                });
+                if (res.done) {
+                    await iterator.close();
+                    break;
+                }
             }
 
-            if (res.done) {
-                await iterator.close();
-                break;
-            }
+            return JSON.stringify(results);
+        } catch (error) {
+            return JSON.stringify({ error: error.message });
         }
-
-        return JSON.stringify(results);
     }
     
 
-    async QueryAllEnforcements(ctx) {
+async QueryAllEnforcements(ctx) {
+        try {
+            const queryString = {
+                selector: {
+                    docType: "enforcement"
+                }
+            };
 
-    const queryString = {
-        selector: {
-            docType: "enforcement"
-        }
-    };
+            const iterator = await ctx.stub.getQueryResult(JSON.stringify(queryString));
 
-    const iterator = await ctx.stub.getQueryResult(JSON.stringify(queryString));
+            const results = [];
 
-    const results = [];
+            while (true) {
+                const res = await iterator.next();
 
-    while (true) {
-        const res = await iterator.next();
+                if (res.value && res.value.value.toString()) {
+                    results.push(JSON.parse(res.value.value.toString('utf8')));
+                }
 
-        if (res.value && res.value.value.toString()) {
-            results.push(JSON.parse(res.value.value.toString('utf8')));
-        }
+                if (res.done) {
+                    await iterator.close();
+                    break;
+                }
+            }
 
-        if (res.done) {
-            await iterator.close();
-            break;
+            return JSON.stringify(results);
+        } catch (error) {
+            return JSON.stringify({ error: error.message });
         }
     }
-
-    return JSON.stringify(results);
-}
 
 
 }

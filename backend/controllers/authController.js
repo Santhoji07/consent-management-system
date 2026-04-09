@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { SECRET } = require('../middleware/authMiddleware');
+const { getSecret } = require('../middleware/authMiddleware');
 
 const usersFile = path.join(__dirname, '../users.json');
 
@@ -46,8 +46,8 @@ exports.login = async (req, res) => {
 
     const token = jwt.sign(
         { username: user.username, role: user.role },
-        SECRET,
-        { expiresIn: '1h' }
+        getSecret(),
+        { expiresIn: '30m' }
     );
 
     res.json({ token, role: user.role });
